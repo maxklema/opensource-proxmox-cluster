@@ -1,0 +1,18 @@
+#Equivalent to ssh -J jump@[appname].mie.local,jump@10.42.0.26 root@[appname].internal where 10.42.0.26 is an internal ssh jump host that connects to the 10.[8,14,22].0.0/16 class B subnets
+
+# First Jump Host
+Host stable-jump1
+    HostName stable.mie.local
+    User jump
+
+# Second Jump Host
+Host stable-jump2
+    HostName 10.42.0.26
+    User jump
+
+# The Final Destination Host
+Host appname-internal-vscode
+HostName [appname].internal
+    User root
+    ProxyJump stable-jump1,stable-jump2
+    #ForwardAgent yes
