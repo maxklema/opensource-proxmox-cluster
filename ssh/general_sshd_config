@@ -1,0 +1,43 @@
+
+# This is the sshd server system-wide configuration file.  See
+# sshd_config(5) for more information.
+
+# This sshd was compiled with PATH=/usr/local/bin:/usr/bin:/bin:/usr/games
+
+# The strategy used for options in the default sshd_config shipped with
+# OpenSSH is to specify options with their default value where
+# possible, but leave them commented.  Uncommented options override the
+# default value.
+
+Include /etc/ssh/sshd_config.d/*.conf
+
+Port 22
+Port 100
+
+PermitRootLogin yes
+PubkeyAuthentication yes
+PasswordAuthentication yes
+#PermitEmptyPasswords no
+
+KbdInteractiveAuthentication no
+UsePAM yes
+X11Forwarding yes
+PrintMotd no
+
+# Allow client to pass locale environment variables
+AcceptEnv LANG LC_*
+AcceptEnv mieAPP
+
+# override default of no subsystems
+Subsystem	sftp	/usr/lib/openssh/sftp-server
+
+Match LocalPort 1000
+      ForceCommand /usr/local/bin/auto-ssh-proxy.sh
+      PermitTTY yes
+      AllowTcpForwarding yes
+      X11Forwarding no
+
+Match User jump
+	ForceCommand echo "Interactive login is not allowed for this user"
+	PermitTTY no
+	PermitOpen any
