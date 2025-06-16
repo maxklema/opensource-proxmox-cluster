@@ -1,33 +1,47 @@
 #!/bin/bash
+# ~/shell/newContainer.sh on proxmox host
+# Last Updated: June 16, 2025 Maxwell Klema
 
 GETNEXTID=$(pvesh get /cluster/nextid) #Get the next available LXC ID
 NEXTID=$GETNEXTID
 
 # Get Container Type (PR/Beta/Stable)
-read -p "Enter Container Type (PR/BETA/STABLE): " CONTAINER_TYPE
+read -p "Enter Container Type (PR/BETA/STABLE) →  " CONTAINER_TYPE
 
 while [[ "$CONTAINER_TYPE" != "PR" && "$CONTAINER_TYPE" != "BETA" && "$CONTAINER_TYPE" != "STABLE" ]];
 do
 	echo "Invalid Container Type. Must be \"PR\", \"BETA\", or \"STABLE\"."
-	read -p "Enter Container Type (PR/BETA/STABLE): " CONTAINER_TYPE
+	read -p "Enter Container Type (PR/BETA/STABLE) →  " CONTAINER_TYPE
 done
 
 # Gather Container Details
-read -p "Enter Application Name (One-Word): " CONTAINER_NAME
-read -sp "Enter Container Password: " CONTAINER_PASSWORD
+
+read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
+
+HOST_NAME_EXISTS=$(node hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
+
+
+while [ $HOST_NAME_EXISTS == 'true' ]; do
+	echo "Sorry! That name has already been registered. Try another name"
+	read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
+	HOST_NAME_EXISTS=$(node hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
+done
+
+
+read -sp "Enter Container Password →  " CONTAINER_PASSWORD
 echo
-read -sp "Confirm Container Password: " CONFIRM_PASSWORD
+read -sp "Confirm Container Password →  " CONFIRM_PASSWORD
 echo
 
 while [ "$CONFIRM_PASSWORD" != "$CONTAINER_PASSWORD" ]; do
 	echo "Passwords did not match. Try again."
-	read -sp "Enter Container Password: " CONTAINER_PASSWORD
+	read -sp "Enter Container Password →  " CONTAINER_PASSWORD
 	echo
-	read -sp "Confirm Container Password: " CONFIRM_PASSWORD
+	read -sp "Confirm Container Password →  " CONFIRM_PASSWORD
 	echo
 done
 
-read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL]: " PUBLIC_KEY_FILE
+read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL] →  " PUBLIC_KEY_FILE
 
 INTERNAL_HOSTNAME="$CONTAINER_NAME.internal"
 
@@ -88,12 +102,15 @@ fi
 
 echo "Added DNS Mapping for $CONTAINER_NAME"
 
+# Add Container Details to JSON Hostname File
+
+node hostnameRunner.js addHostname $CONTAINER_NAME $IP $CONTAINER_TYPE
 
 # Container Details
 
 echo -e "\n----------------------------------------"
-echo -e "\nYour Container was Successfully Created. Details:\n"
-echo "Domain Name: $CONTAINER_NAME.mie.local"
-echo "SSH Command [With SSH Keys]: ssh -A -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
-echo "SSH Command [Without SSH Keys]: ssh -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
+echo -e "\n🎊 Your Container was Successfully Created. Details:\n"
+echo "✅ Domain Name: $CONTAINER_NAME.mie.local"
+echo "🔒 SSH Command [With SSH Keys]: ssh -A -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
+echo "🔒 SSH Command [Without SSH Keys]: ssh -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
 echo -e "\n----------------------------------------"
