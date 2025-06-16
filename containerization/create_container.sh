@@ -14,8 +14,20 @@ done
 
 # Gather Container Details
 read -p "Enter Application Name (One-Word): " CONTAINER_NAME
-read -sp "Enter Container Password: " CONTAINER_PASSWORD #password input silent
+read -sp "Enter Container Password: " CONTAINER_PASSWORD
+echo
+read -sp "Confirm Container Password: " CONFIRM_PASSWORD
+echo
 
+while [ "$CONFIRM_PASSWORD" != "$CONTAINER_PASSWORD" ]; do
+	echo "Passwords did not match. Try again."
+	read -sp "Enter Container Password: " CONTAINER_PASSWORD
+	echo
+	read -sp "Confirm Container Password: " CONFIRM_PASSWORD
+	echo
+done
+
+read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL]: " PUBLIC_KEY_FILE
 
 INTERNAL_HOSTNAME="$CONTAINER_NAME.internal"
 
@@ -39,14 +51,22 @@ else
 fi
 
 # Create the Container
+
 pct create $NEXTID local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst \
   --hostname $CONTAINER_NAME \
   --cores 2 \
   --memory 2048 \
   --net0 name=$NETWORK,bridge=$NETWORK,tag=$TAG,ip=dhcp \
   --rootfs local-lvm:8 \
+  --ssh-public-keys $PUBLIC_KEY_FILE \
   --password $CONTAINER_PASSWORD \
   --start 1
+
+# Add Public Key to jump/ssh/authorized_keys
+
+PUBLIC_KEY=$(cat $PUBLIC_KEY_FILE)
+
+echo "$PUBLIC_KEY" >> /home/jump/.ssh/authorized_keys 
 
 # Get LXC IP and Create new DNSMASQ lease
 
@@ -68,3 +88,12 @@ fi
 
 echo "Added DNS Mapping for $CONTAINER_NAME"
 
+
+# Container Details
+
+echo -e "\n----------------------------------------"
+echo -e "\nYour Container was Successfully Created. Details:\n"
+echo "Domain Name: $CONTAINER_NAME.mie.local"
+echo "SSH Command [With SSH Keys]: ssh -A -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
+echo "SSH Command [Without SSH Keys]: ssh -J jump@$CONTAINER_NAME.mie.local,jump@jump-host.mie.local root@$CONTAINER_NAME.internal"
+echo -e "\n----------------------------------------"
