@@ -22,7 +22,7 @@ HOST_NAME_EXISTS=$(node /root/shell/hostnameRunner.js checkHostnameExists "$CONT
 while [ $HOST_NAME_EXISTS == 'true' ]; do
 	echo "Sorry! That name has already been registered. Try another name"
 	read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
-	HOST_NAME_EXISTS=$(node hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
+	HOST_NAME_EXISTS=$(node /root/shell/hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
 done
 
 
@@ -43,10 +43,10 @@ done
 
 echo -e "\n🔑 Attempting to Detect SSH Public Key for $(whoami)..."
 
-DETECT_PUBLIC_KEY=$(sudo ./detectPublicKey.sh)
+DETECT_PUBLIC_KEY=$(sudo /home/CreateContainer/shell/detectPublicKey.sh)
 
 if [ "$DETECT_PUBLIC_KEY" == "Public key found for $(whoami)" ]; then
-	PUBLIC_KEY_FILE="temp_pubs/key.pub"
+	PUBLIC_KEY_FILE="/home/CreateContainer/shell/temp_pubs/key.pub"
 	echo "🔐 Public Key Found!"
 else
 	echo "🔍 Could not detect Public Key"
@@ -61,10 +61,10 @@ else
 	done
 
 	if [ "$PUBLIC_KEY" == "" ]; then
-		echo "" > "temp_pubs/key.pub"
+		echo "" > "/home/CreateContainer/shell/temp_pubs/key.pub"
 	else
-		echo "$PUBLIC_KEY" > "temp_pubs/key.pub"
-		sudo ./publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
+		echo "$PUBLIC_KEY" > "/home/CreateContainer/shell/temp_pubs/key.pub"
+		sudo ./home/CreateContainer/shell/publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
 	fi
 fi
 
