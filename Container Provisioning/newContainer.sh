@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 GETNEXTID=$(pvesh get /cluster/nextid) #Get the next available LXC ID
@@ -18,7 +17,7 @@ done
 
 read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
 
-HOST_NAME_EXISTS=$(node hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
+HOST_NAME_EXISTS=$(node /root/shell/hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
 
 while [ $HOST_NAME_EXISTS == 'true' ]; do
 	echo "Sorry! That name has already been registered. Try another name"
@@ -44,13 +43,13 @@ done
 
 echo -e "\n🔑 Attempting to Detect SSH Public Key for $(whoami)..."
 
-DETECT_PUBLIC_KEY=$(./detectPublicKey.sh)
+DETECT_PUBLIC_KEY=$(sudo ./detectPublicKey.sh)
 
 if [ "$DETECT_PUBLIC_KEY" == "Public key found for $(whoami)" ]; then
 	PUBLIC_KEY_FILE="temp_pubs/key.pub"
 	echo "🔐 Public Key Found!"
 else
-	echo "❌ Could not detect Public Key"
+	echo "🔍 Could not detect Public Key"
 	read -p "Enter Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
 	PUBLIC_KEY_FILE="temp_pubs/key.pub"
 
@@ -65,7 +64,7 @@ else
 		echo "" > "temp_pubs/key.pub"
 	else
 		echo "$PUBLIC_KEY" > "temp_pubs/key.pub"
-		./publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
+		sudo ./publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
 	fi
 fi
 
@@ -140,7 +139,12 @@ echo "Added DNS Mapping for $CONTAINER_NAME"
 
 # Add Container Details to JSON Hostname File
 
-node hostnameRunner.js addHostname $CONTAINER_NAME $IP $CONTAINER_TYPE
+node /root/shell/hostnameRunner.js addHostname $CONTAINER_NAME $IP $CONTAINER_TYPE
+
+# Enable Root Login via Password
+
+pct exec $NEXTID -- sed -i 's/^#\?PermitRootLogin .*/PermitRootLogin yes/' /etc/ssh/sshd_config
+pct exec $NEXTID -- systemctl restart ssh
 
 # Container Details
 
