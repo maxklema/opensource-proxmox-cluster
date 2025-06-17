@@ -1,35 +1,41 @@
 # /etc/ssh/sshd_config
-# Most relevant part is Match user jump, which disables interactive Shells but still forwards routes
+# Basic Template for managing SSH permissions
 
 Include /etc/ssh/sshd_config.d/*.conf
 
 Port 22
-Port 100
+Port 1000
+
 
 PermitRootLogin yes
 PubkeyAuthentication yes
-PasswordAuthentication yes
-#PermitEmptyPasswords no
 
+PasswordAuthentication yes
 KbdInteractiveAuthentication no
+
 UsePAM yes
+
 X11Forwarding yes
 PrintMotd no
-
-# Allow client to pass locale environment variables
 AcceptEnv LANG LC_*
 AcceptEnv mieAPP
 
 # override default of no subsystems
 Subsystem	sftp	/usr/lib/openssh/sftp-server
 
+# Example of overriding settings on a per-user basis
 Match LocalPort 1000
       ForceCommand /usr/local/bin/auto-ssh-proxy.sh
       PermitTTY yes
       AllowTcpForwarding yes
       X11Forwarding no
 
-Match User jump
-	ForceCommand echo "Interactive login is not allowed for this user"
-	PermitTTY no
-	PermitOpen any
+# This is only intended for jump hosts
+#Match User jump
+#	ForceCommand echo "Interactive login is not allowed for this user"
+#	PermitTTY no
+#	PermitOpen any
+
+Match User CreateContainer
+	permitTTY yes
+	ForceCommand sudo /home/CreateContainer/shell/newContainer.sh

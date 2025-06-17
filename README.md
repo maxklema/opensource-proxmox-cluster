@@ -12,35 +12,35 @@ This project streamlines the process for developers and interns to host applicat
 ### Project Structure
 
 ```
-|-- Container\ Provisioning
-|   |-- create_container.sh
-|   |-- hostnameRunner.js
-|   |-- hostnames.js
-|   `-- manageHostnames.js
-|-- README.md
-|-- dnsmasq
-|   |-- dnsmasq.conf
-|   `-- leases
-|       |-- Beta-leases.conf
-|       |-- PR-leases.conf
-|       |-- README
-|       `-- Stable-leases.conf
-|-- iptables
-|   |-- dnsmasq-iprules.v4
-|   `-- proxmox-host-iprules.v4
-|-- nginx\ r-proxy
-|   |-- nginx.conf
-|   `-- wildcard_proxy.conf
-|-- ssh
-|   |-- directSSH.sh
-|   `-- general_sshd_config
-`-- vscode-ssh-config-template
-
+├── Container Provisioning
+│   ├── hostnameRunner.js
+│   ├── manageHostnames.js
+│   └── newContainer.sh
+├── dnsmasq
+│   ├── dnsmasq.conf
+│   └── leases
+│       ├── Beta-leases.conf
+│       ├── PR-leases.conf
+│       ├── README
+│       └── Stable-leases.conf
+├── iptables
+│   ├── dnsmasq-iprules.v4
+│   └── proxmox-host-iprules.v4
+├── nginx r-proxy
+│   ├── nginx.conf
+│   └── wildcard_proxy.conf
+├── README.md
+├── ssh
+│   ├── detectPublicKey.sh
+│   ├── directSSH.sh
+│   ├── general_sshd_config
+│   └── publicKeyAppendJumpHost.sh
+└── vscode-ssh-config-template
 ```
 
 This repository includes scripts and configuration files for LXC container provisioning, dnsmasq (DNS/DHCP), SSH, and an Nginx reverse proxy.
 
--   `Container Provisioning/create_container.sh`: The primary script that communicates with the Proxmox `pct` CLI to provision new containers based on user preferences.
+-   `Container Provisioning/newContainer.sh`: The primary script that communicates with the Proxmox `pct` CLI to provision new containers based on user preferences.
 
 -   `Container Provisioning/hostnameRunner.js`: A JavaScript runner file that imports functions from `manageHostnames.js`, making them usable in `create_container.sh` by specifying the Node.js runtime, runner file, function names, and arguments.
 
@@ -61,6 +61,10 @@ This repository includes scripts and configuration files for LXC container provi
 -   `ssh/directSSH.sh`: [Experimental] A non-production script intended to replace jump host functionality by explicitly prompting the user for an application name. It does not work well with IDE-based SSH clients and extensions, such as Remote-SSH in VSCode.
 
 -   `ssh/general_sshd_config`: SSH configuration for jump hosts that ensures user SSH sessions are not interactive in the shell but can still forward SSH traffic.
+
+-   `ssh/detectPublicKey.sh`: A script that compares an SSH session fingerprint (if there is such a session) with public key fingerprints. If there is a match, the public key is automatically applied.
+
+-   `ssh/publicKeyAppendJumpHost.sh`: A simple script that appends the user's public key to the internal SSH jump host. 
 
 -   `vscode-ssh-config-template`: A sample configuration file for connecting to a container project in VSCode using the Remote-SSH extension.
 
@@ -91,4 +95,5 @@ Containers are categorized into three types based on their lease: **PR**, **Beta
 2.  Set up at least three additional VLANs and Bridges on the host machine.
     -   **Note**: You may need to troubleshoot the network setup. My setup uses an external gateway with a Wi-Fi adapter. In a production environment, the host itself would have the public-facing IP, and each service would have either a public or private IP.
 3.  Place the configuration files in their correct locations. Create separate containers for the Nginx reverse proxy, the dnsmasq server, and the SSH jump host. Update and apply all service configurations.
-4.  Run `Container Provisioning/create_container.sh` on your Proxmox machine to provision new containers.
+4.  Create a user called 'CreateContainer' in the proxmox host. Ensure it has access to sudo and all necessary scripts. Additionally, in sshd_config, force the newContainer.sh script on SSH to disable interactive shell.
+5.  SSH into CreateContainer on your Proxmox machine to provision new containers. Make the password available to those who have permission to provision containers.
