@@ -1,3 +1,4 @@
+
 #!/bin/bash
 
 GETNEXTID=$(pvesh get /cluster/nextid) #Get the next available LXC ID
@@ -50,17 +51,21 @@ if [ "$DETECT_PUBLIC_KEY" == "Public key found for $(whoami)" ]; then
 	echo "🔐 Public Key Found!"
 else
 	echo "❌ Could not detect Public Key"
-	read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL] →  " PUBLIC_KEY_FILE
+	read -p "Enter Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
+	PUBLIC_KEY_FILE="temp_pubs/key.pub"
 
-	# Check if file or directory exists
+	# Check if key is valid
 
-	while [[ "$PUBLIC_KEY_FILE" == *.pub && ! -e "$PUBLIC_KEY_FILE" ]]; do
-		echo "❌ \"$PUBLIC_KEY_FILE\" does not exist. Enter either a valid .pub file or leave blank."
-		read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL] →  " PUBLIC_KEY_FILE
+	while [[ "$PUBLIC_KEY" != "" && $(echo "$PUBLIC_KEY" | ssh-keygen -l -f - 2>&1 | tr -d '\r') == "(stdin) is not a public key file." ]]; do
+		echo "❌ \"$PUBLIC_KEY\" is not a valid key. Enter either a valid key or leave blank to skip."
+		read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
 	done
 
-	if [ "$PUBLIC_KEY_FILE" != *.pub ]; then
-		PUBLIC_KEY_FILE="temp_pubs/key.pub"
+	if [ "$PUBLIC_KEY" == "" ]; then
+		echo "" > "temp_pubs/key.pub"
+	else
+		echo "$PUBLIC_KEY" > "temp_pubs/key.pub"
+		./publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
 	fi
 fi
 
@@ -97,11 +102,21 @@ pct create $NEXTID local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst \
   --password $CONTAINER_PASSWORD \
   --start 1
 
+# Check that the container was created
+
+if [ $? -ne 0 ]; then
+   	echo -e "❌ ERROR: Failed to create container '$CONTAINER_NAME' (ID: $NEXTID).\nPlease Try Again"
+	exit 1
+fi
+
 # Add Public Key to jump/ssh/authorized_keys
 
 PUBLIC_KEY=$(cat $PUBLIC_KEY_FILE)
 
-echo "$PUBLIC_KEY" >> /home/jump/.ssh/authorized_keys 
+
+if [ "$PUBLIC_KEY" != "" ]; then
+	echo "$PUBLIC_KEY" >> /home/jump/.ssh/authorized_keys
+fi
 
 # Get LXC IP and Create new DNSMASQ lease
 
