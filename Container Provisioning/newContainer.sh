@@ -1,4 +1,12 @@
 #!/bin/bash
+# Main Container Creation Script
+# Modified June 18th, 2025 by Maxwell Klema
+
+# Proxmox Log in
+
+source ./userLogin.sh
+
+# Other Misc.
 
 GETNEXTID=$(pvesh get /cluster/nextid) #Get the next available LXC ID
 NEXTID=$GETNEXTID
@@ -154,6 +162,10 @@ echo "Added DNS Mapping for $CONTAINER_NAME"
 # Add Container Details to JSON Hostname File
 
 node /root/shell/hostnameRunner.js addHostname $CONTAINER_NAME $IP $CONTAINER_TYPE
+
+# Assign Container to Proxmox User and Give Permissions to Manage Container
+
+pveum aclmod /vms/$NEXTID -user $PROXMOX_USERNAME@pve -role PVEVMUser
 
 # Enable Root Login via Password
 
