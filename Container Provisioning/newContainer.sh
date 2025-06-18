@@ -5,7 +5,9 @@ NEXTID=$GETNEXTID
 
 # Get Container Type (PR/Beta/Stable)
 
-read -p "Enter Container Type (PR/BETA/STABLE) →  " CONTAINER_TYPE
+if [ -z "$CONTAINER_TYPE" ]; then
+	read -p "Enter Container Type (PR/BETA/STABLE) →  " CONTAINER_TYPE
+fi
 
 while [[ "$CONTAINER_TYPE" != "PR" && "$CONTAINER_TYPE" != "BETA" && "$CONTAINER_TYPE" != "STABLE" ]];
 do
@@ -15,7 +17,10 @@ done
 
 # Gather Container Details
 
-read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
+if [ -z "$CONTAINER_NAME" ]; then
+	read -p "Enter Application Name (One-Word) →  " CONTAINER_NAME
+fi
+
 
 HOST_NAME_EXISTS=$(node /root/shell/hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
 
@@ -25,46 +30,55 @@ while [ $HOST_NAME_EXISTS == 'true' ]; do
 	HOST_NAME_EXISTS=$(node /root/shell/hostnameRunner.js checkHostnameExists "$CONTAINER_NAME")
 done
 
-
-read -sp "Enter Container Password →  " CONTAINER_PASSWORD
-echo
-read -sp "Confirm Container Password →  " CONFIRM_PASSWORD
-echo
-
-while [ "$CONFIRM_PASSWORD" != "$CONTAINER_PASSWORD" ]; do
-	echo "Passwords did not match. Try again."
+if [ -z "$CONTAINER_PASSWORD" ]; then
 	read -sp "Enter Container Password →  " CONTAINER_PASSWORD
 	echo
 	read -sp "Confirm Container Password →  " CONFIRM_PASSWORD
 	echo
-done
+
+	while [ "$CONFIRM_PASSWORD" != "$CONTAINER_PASSWORD" ]; do
+        	echo "Passwords did not match. Try again."
+        	read -sp "Enter Container Password →  " CONTAINER_PASSWORD
+        	echo
+        	read -sp "Confirm Container Password →  " CONFIRM_PASSWORD
+        	echo
+	done
+fi
 
 # Attempt to detect public keys
 
-echo -e "\n🔑 Attempting to Detect SSH Public Key for $(whoami)..."
+echo -e "\n🔑 Attempting to Detect SSH Public Key for CreateContainer..."
 
 DETECT_PUBLIC_KEY=$(sudo /home/CreateContainer/shell/detectPublicKey.sh)
 
-if [ "$DETECT_PUBLIC_KEY" == "Public key found for $(whoami)" ]; then
+if [ "$DETECT_PUBLIC_KEY" == "Public key found for CreateContainer" ]; then
 	PUBLIC_KEY_FILE="/home/CreateContainer/shell/temp_pubs/key.pub"
 	echo "🔐 Public Key Found!"
 else
 	echo "🔍 Could not detect Public Key"
-	read -p "Enter Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
-	PUBLIC_KEY_FILE="temp_pubs/key.pub"
 
-	# Check if key is valid
+	if [ -z "$PUBLIC_KEY" ]; then
+		read -p "Enter Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
+        	PUBLIC_KEY_FILE="/home/CreateContainer/shell/temp_pubs/key.pub"
 
-	while [[ "$PUBLIC_KEY" != "" && $(echo "$PUBLIC_KEY" | ssh-keygen -l -f - 2>&1 | tr -d '\r') == "(stdin) is not a public key file." ]]; do
-		echo "❌ \"$PUBLIC_KEY\" is not a valid key. Enter either a valid key or leave blank to skip."
-		read -p "Enter Path Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
-	done
+        	# Check if key is valid
 
-	if [ "$PUBLIC_KEY" == "" ]; then
-		echo "" > "/home/CreateContainer/shell/temp_pubs/key.pub"
+        	while [[ "$PUBLIC_KEY" != "" && $(echo "$PUBLIC_KEY" | ssh-keygen -l -f - 2>&1 | tr -d '\r') == "(stdin) is not a public key file." ]]; do
+                	echo "❌ \"$PUBLIC_KEY\" is not a valid key. Enter either a valid key or leave blank to skip."
+                	read -p "Enter Public Key (Allows Easy Access to Container) [OPTIONAL - LEAVE BLANK TO SKIP] →  " PUBLIC_KEY
+        	done
+
+        	if [ "$PUBLIC_KEY" == "" ]; then
+                	echo "" > "/home/CreateContainer/shell/temp_pubs/key.pub"
+        	else
+                	echo "$PUBLIC_KEY" > "/home/CreateContainer/shell/temp_pubs/key.pub"
+                	echo "$PUBLIC_KEY" > "/home/CreateContainer/.ssh/authorized_keys" && systemctl restart ssh
+			sudo /home/CreateContainer/shell/publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
+        	fi
+
 	else
 		echo "$PUBLIC_KEY" > "/home/CreateContainer/shell/temp_pubs/key.pub"
-		sudo ./home/CreateContainer/shell/publicKeyAppendJumpHost.sh "$(cat $PUBLIC_KEY_FILE)"
+		echo "$PUBLIC_KEY" > "/home/CreateContainer/.ssh/authorized_keys" && systemctl restart ssh
 	fi
 fi
 

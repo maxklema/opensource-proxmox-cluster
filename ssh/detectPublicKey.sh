@@ -2,11 +2,10 @@
 # Detect if the user in the current session logged in via an SSH public key
 # Last Updated June 17th 2025 Maxwell Klema
 
-USER=$(whoami)
-PUBLIC_KEY_LIST="../.ssh/authorized_keys"
-TEMP_PUB_FILE="temp_pubs/key.pub"
+USER="CreateContainer"
+PUBLIC_KEY_LIST="/home/CreateContainer/.ssh/authorized_keys"
+TEMP_PUB_FILE="/home/CreateContainer/shell/temp_pubs/key.pub"
 SSH_CLIENT_IP=$(echo $SSH_CLIENT | awk '{print $1}')
-
 
 # Extract latest public key fingerprint based on login from USER
 
