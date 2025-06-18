@@ -6,7 +6,7 @@ This project streamlines the process for developers and interns to host applicat
 
 ### General Architecture Overview
 
-![Proxmox Architecture Diagram](https://github.com/user-attachments/assets/7df7d871-dc2d-4165-8573-37dab33ba60d)
+![Proxmox Architecture Diagram](https://github.com/user-attachments/assets/e66b2b97-86a0-4fd2-9281-a8d388fb6c30)
 
 
 ### Project Structure
